@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Web Flasher · 本地固件刷机</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+    <main class="mini-app">
+        
+        <!-- 极致极简毛玻璃卡片 -->
+        <div class="flasher-core-card">
+            
+            <!-- 头部：标题与状态 -->
+            <div class="card-head">
+                <div class="card-title-group">
+                    <span class="icon-bolt">⚡</span>
+                    <h2>Web Flasher</h2>
+                </div>
+                <div class="head-right">
+                    <span class="status-indicator" id="status-badge">
+                        <i class="dot" id="status-dot"></i>
+                        <span id="status-text">未连接</span>
+                    </span>
+                    <button class="theme-btn" id="theme-toggle" title="切换主题">🌓</button>
+                </div>
+            </div>
+
+            <!-- 不支持 WebSerial 时的紧凑警示 -->
+            <div class="mini-warning" id="compat-warn" style="display:none;">
+                ⚠️ 需在电脑端 Chrome / Edge 中连接 USB 设备
+            </div>
+
+            <!-- 1. 连接设备 -->
+            <div class="card-row">
+                <button class="btn btn-connect" id="btn-connect">
+                    <span id="connect-text">连接设备</span>
+                </button>
+            </div>
+
+            <!-- 2. 固件文件拖拽/选择 -->
+            <div class="card-row">
+                <label class="drop-compact" id="drop-area">
+                    <input type="file" id="file-picker" accept=".bin,application/octet-stream" multiple>
+                    <span class="drop-icon">📂</span>
+                    <span class="drop-label" id="drop-label">点击或拖拽本地 .bin 固件</span>
+                </label>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="file-list-wrap" id="file-list" style="display:none;">
+                <!-- 动态列表 -->
+            </div>
+
+            <!-- 3. 操作栏：波特率与操作按钮 -->
+            <div class="card-row action-row">
+                <div class="baud-wrap">
+                    <select id="baud-select" title="波特率">
+                        <option value="921600" selected>921600</option>
+                        <option value="460800">460800</option>
+                        <option value="115200">115200</option>
+                    </select>
+                </div>
+                <button class="btn btn-flash" id="btn-flash" disabled>
+                    <span id="flash-text">开始写入</span>
+                </button>
+                <button class="btn btn-erase" id="btn-erase" disabled title="清除设备数据">
+                    <span>擦除</span>
+                </button>
+            </div>
+
+            <!-- 进度条 -->
+            <div class="progress-wrap" id="progress-box" style="display:none;">
+                <div class="progress-info">
+                    <span id="progress-label">写入中...</span>
+                    <span id="progress-val">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-inner" id="progress-bar"></div>
+                </div>
+            </div>
+
+            <!-- 折叠式设备日志 -->
+            <details class="log-details" id="log-details">
+                <summary>
+                    <span>设备日志</span>
+                    <span class="clear-log-btn" id="btn-clear-log" onclick="event.stopPropagation();">清空</span>
+                </summary>
+                <pre class="log-pre" id="log-pre">[system] 就绪</pre>
+            </details>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="js/app.js?v=20261012_04"></script>
+</body>
+</html>
