@@ -112,7 +112,7 @@ def interactive_flash_local():
         return
 
     address = Prompt.ask("写入起始地址 (单个合并固件通常为 0x0)", default="0x0")
-    baud = Prompt.ask("波特率 (默认 921600)", default="921600")
+    baud = Prompt.ask("波特率 (默认 115200)", default="115200")
 
     console.print(f"\n[cyan]准备烧录:[/cyan] {file_path} -> [green]{port}[/green] @ {address} (波特率 {baud})")
     if not Confirm.ask("确认开始写入?"):
@@ -183,7 +183,7 @@ def interactive_erase():
         return
 
     console.print("[yellow]正在擦除 Flash，请稍候...[/yellow]")
-    success = erase_chip(port, baud=921600, log_callback=lambda l: console.print(f"[dim]{l}[/dim]"))
+    success = erase_chip(port, baud=115200, log_callback=lambda l: console.print(f"[dim]{l}[/dim]"))
     if success:
         console.print("[bold green]✔ 设备数据清除完成！[/bold green]")
     else:
@@ -240,7 +240,7 @@ def list_ports_command():
 @cli.command("flash")
 @click.argument("files", nargs=-1, required=False)
 @click.option("-p", "--port", default=None, help="指定串口设备路径 (如 /dev/ttyACM0 或 COM3)")
-@click.option("-b", "--baud", default=921600, type=int, help="烧录波特率 (默认 921600)")
+@click.option("-b", "--baud", default=115200, type=int, help="烧录波特率 (默认 115200)")
 @click.option("-a", "--addr", default="0x0", help="默认写入地址偏移 (默认 0x0)")
 @click.option("-e", "--erase-first", is_flag=True, help="烧录前先擦除设备数据")
 def flash_command(files, port, baud, addr, erase_first):
@@ -249,7 +249,7 @@ def flash_command(files, port, baud, addr, erase_first):
 
     示例:
       folotoy-flasher flash firmware.bin
-      folotoy-flasher flash -p /dev/ttyACM0 -b 921600 firmware.bin
+      folotoy-flasher flash -p /dev/ttyACM0 -b 115200 firmware.bin
       folotoy-flasher flash 0x0:bootloader.bin 0x8000:partitions.bin 0x10000:app.bin
     """
     if not port:
@@ -287,7 +287,7 @@ def flash_command(files, port, baud, addr, erase_first):
 
 @cli.command("erase")
 @click.option("-p", "--port", default=None, help="指定串口设备路径")
-@click.option("-b", "--baud", default=921600, type=int, help="波特率")
+@click.option("-b", "--baud", default=115200, type=int, help="波特率 (默认 115200)")
 def erase_command(port, baud):
     """清除设备数据 (Erase Flash)"""
     if not port:

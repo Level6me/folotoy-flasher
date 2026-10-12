@@ -67,7 +67,7 @@ folotoy-flasher flash /path/to/firmware.bin
 
 #### 指定串口和波特率：
 ```bash
-folotoy-flasher flash -p /dev/ttyACM0 -b 921600 /path/to/firmware.bin
+folotoy-flasher flash -p /dev/ttyACM0 -b 115200 /path/to/firmware.bin
 ```
 
 #### 刷入前先彻底擦除设备（Erase First）：
