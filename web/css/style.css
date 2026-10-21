@@ -444,3 +444,214 @@ body {
     white-space: pre-wrap;
     word-break: break-all;
 }
+
+/* 固件来源 Tabs 分段控制器 */
+.tabs-row {
+    display: flex;
+    background: var(--card-sec);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    gap: 4px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 7px 12px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-sec);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: var(--text);
+}
+
+.tab-btn.active {
+    background: var(--card-solid);
+    color: var(--text);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* GitHub 面板 */
+.gh-input-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gh-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+.gh-input {
+    flex: 1;
+    background: var(--card-sec);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.gh-input:focus {
+    border-color: var(--accent);
+}
+
+.btn-gh-fetch {
+    background: var(--accent);
+    color: #fff;
+    padding: 9px 16px;
+    flex: 0 0 auto;
+}
+
+.btn-gh-fetch:hover {
+    background: var(--accent-hover);
+}
+
+.btn-gh-fetch:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.gh-token-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+}
+
+.gh-token-toggle {
+    color: var(--text-sec);
+    cursor: pointer;
+    user-select: none;
+    align-self: flex-start;
+}
+
+.gh-token-toggle:hover {
+    color: var(--accent);
+}
+
+.gh-token-input {
+    background: var(--card-sec);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 11px;
+    color: var(--text);
+    outline: none;
+}
+
+.gh-status {
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.gh-status.loading {
+    color: var(--accent);
+    background: rgba(0, 113, 227, 0.08);
+}
+
+.gh-status.error {
+    color: var(--danger);
+    background: rgba(255, 59, 48, 0.1);
+}
+
+.gh-results {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gh-release-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.gh-label {
+    color: var(--text-sec);
+    white-space: nowrap;
+}
+
+.gh-select {
+    flex: 1;
+    background: var(--card-solid);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+}
+
+.gh-assets-list {
+    max-height: 190px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 2px;
+}
+
+.gh-asset-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--card-solid);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+}
+
+.gh-asset-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+
+.gh-asset-meta {
+    font-size: 11px;
+    color: var(--text-sec);
+    flex: 0 0 auto;
+}
+
+.btn-gh-load {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition: all 0.15s;
+}
+
+.btn-gh-load:hover:not(:disabled) {
+    background: var(--accent-hover);
+}
+
+.btn-gh-load:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

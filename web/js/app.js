@@ -31,6 +31,23 @@ const statusBadge = document.getElementById("status-badge");
 const statusText = document.getElementById("status-text");
 const compatWarn = document.getElementById("compat-warn");
 
+const tabLocal = document.getElementById("tab-local");
+const tabGithub = document.getElementById("tab-github");
+const panelLocal = document.getElementById("panel-local");
+const panelGithub = document.getElementById("panel-github");
+
+const ghRepoInput = document.getElementById("gh-repo-input");
+const btnGhFetch = document.getElementById("btn-gh-fetch");
+const btnToggleToken = document.getElementById("btn-toggle-token");
+const ghTokenInput = document.getElementById("gh-token-input");
+const ghStatus = document.getElementById("gh-status");
+const ghResults = document.getElementById("gh-results");
+const ghReleaseSelect = document.getElementById("gh-release-select");
+const ghAssetsList = document.getElementById("gh-assets-list");
+
+const DEFAULT_GH_TOKEN = "";
+let loadedReleases = [];
+
 const filePicker = document.getElementById("file-picker");
 const dropArea = document.getElementById("drop-area");
 const dropLabel = document.getElementById("drop-label");
@@ -168,6 +185,211 @@ function handleAddFiles(fileListInput) {
         });
     });
     renderFiles();
+}
+
+function parseRepoInput(input) {
+    let str = (input || "").trim().replace(/\.git\/?$/, "").replace(/\/+$/, "");
+    const match = str.match(/(?:github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+    if (match) {
+        return { owner: match[1], repo: match[2] };
+    }
+    return null;
+}
+
+function setGhStatus(msg, type = "loading") {
+    if (!msg) {
+        ghStatus.style.display = "none";
+        ghStatus.textContent = "";
+        ghStatus.className = "gh-status";
+        return;
+    }
+    ghStatus.style.display = "block";
+    ghStatus.textContent = msg;
+    ghStatus.className = `gh-status ${type}`;
+}
+
+function getGhToken() {
+    const val = ghTokenInput.value.trim();
+    return val || DEFAULT_GH_TOKEN;
+}
+
+async function fetchReleases() {
+    const rawInput = ghRepoInput.value.trim();
+    if (!rawInput) {
+        setGhStatus("请输入 GitHub 仓库地址", "error");
+        return;
+    }
+
+    const parsed = parseRepoInput(rawInput);
+    if (!parsed) {
+        setGhStatus("无法识别的仓库地址，请按 'owner/repo' 格式输入", "error");
+        return;
+    }
+
+    const { owner, repo } = parsed;
+    const token = getGhToken();
+
+    setGhStatus(`正在查询 ${owner}/${repo} 的发布列表...`, "loading");
+    btnGhFetch.disabled = true;
+    ghResults.style.display = "none";
+
+    try {
+        let releases = [];
+        let usedProxy = false;
+
+        // 尝试通过本地 Python 接口获取
+        try {
+            const resp = await fetch(`/api/github/releases?repo=${encodeURIComponent(owner + '/' + repo)}&token=${encodeURIComponent(token)}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.ok) {
+                    releases = data.releases;
+                    usedProxy = true;
+                }
+            }
+        } catch (_) {
+            // 本地代理不可用，回退直接请求 GitHub
+        }
+
+        if (!usedProxy) {
+            const headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "folotoy-flasher-web"
+            };
+            if (token) headers["Authorization"] = `token ${token}`;
+
+            const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases`, { headers });
+            if (resp.status === 404) throw new Error("未找到仓库，请检查仓库名或权限");
+            if (resp.status === 403) throw new Error("GitHub API 调用频率超限或 Token 无效");
+            if (!resp.ok) throw new Error(`HTTP 错误: ${resp.status}`);
+            
+            const rawList = await resp.json();
+            releases = rawList.map(rel => {
+                const assets = (rel.assets || []).map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    size: a.size,
+                    download_url: a.browser_download_url,
+                    is_bin: a.name.toLowerCase().endsWith(".bin")
+                }));
+                return {
+                    id: rel.id,
+                    tag_name: rel.tag_name || "untagged",
+                    title: rel.name || rel.tag_name,
+                    published_at: (rel.published_at || "").slice(0, 10),
+                    prerelease: rel.prerelease || false,
+                    assets: assets,
+                    bin_count: assets.filter(a => a.is_bin).length,
+                    total_count: assets.length
+                };
+            });
+        }
+
+        if (!releases || releases.length === 0) {
+            setGhStatus(`仓库 ${owner}/${repo} 暂无任何 Release 发布记录`, "error");
+            return;
+        }
+
+        loadedReleases = releases;
+        setGhStatus(""); // 清除 loading 状态
+        ghResults.style.display = "flex";
+
+        // 填充下拉框
+        ghReleaseSelect.innerHTML = "";
+        releases.forEach((rel, idx) => {
+            const opt = document.createElement("option");
+            opt.value = idx;
+            const binText = rel.bin_count > 0 ? ` [${rel.bin_count} 个固件]` : ` [${rel.total_count} 个文件]`;
+            const pre = rel.prerelease ? " (Pre)" : "";
+            opt.textContent = `${rel.tag_name}${pre} - ${rel.title || rel.published_at}${binText}`;
+            ghReleaseSelect.appendChild(opt);
+        });
+
+        renderGhAssets(0);
+        appendLog(`[GitHub] 获取到 ${owner}/${repo} 共 ${releases.length} 个发布版本。`);
+    } catch (err) {
+        setGhStatus(`获取失败: ${err.message}`, "error");
+        appendLog(`[GitHub] 错误: ${err.message}`);
+    } finally {
+        btnGhFetch.disabled = false;
+    }
+}
+
+function renderGhAssets(releaseIdx) {
+    const rel = loadedReleases[releaseIdx];
+    if (!rel) return;
+
+    ghAssetsList.innerHTML = "";
+    const assets = rel.assets || [];
+
+    if (assets.length === 0) {
+        ghAssetsList.innerHTML = `<div class="gh-status error">该版本无固件文件</div>`;
+        return;
+    }
+
+    // 优先展示 .bin
+    const sortedAssets = [...assets].sort((a, b) => (b.is_bin ? 1 : 0) - (a.is_bin ? 1 : 0));
+
+    sortedAssets.forEach(a => {
+        const item = document.createElement("div");
+        item.className = "gh-asset-item";
+        item.innerHTML = `
+            <span class="gh-asset-name" title="${a.name}">${a.is_bin ? "⚡ " : "📄 "}${a.name}</span>
+            <span class="gh-asset-meta">${formatKB(a.size)}</span>
+            <button class="btn-gh-load" type="button">载入</button>
+        `;
+
+        const loadBtn = item.querySelector(".btn-gh-load");
+        loadBtn.addEventListener("click", () => loadAssetFirmware(a, loadBtn));
+
+        ghAssetsList.appendChild(item);
+    });
+}
+
+async function loadAssetFirmware(asset, btn) {
+    const originalText = btn.textContent;
+    btn.textContent = "下载中...";
+    btn.disabled = true;
+    appendLog(`[GitHub] 正在下载固件: ${asset.name} (${formatKB(asset.size)})...`);
+
+    try {
+        const token = getGhToken();
+        let arrayBuf = null;
+
+        // 尝试通过本地后端下载
+        try {
+            const proxyUrl = `/api/github/download?url=${encodeURIComponent(asset.download_url)}&filename=${encodeURIComponent(asset.name)}&token=${encodeURIComponent(token)}`;
+            const resp = await fetch(proxyUrl);
+            if (resp.ok) {
+                arrayBuf = await resp.arrayBuffer();
+            }
+        } catch (_) {}
+
+        // 回退直接下载
+        if (!arrayBuf) {
+            const resp = await fetch(asset.download_url);
+            if (!resp.ok) throw new Error(`下载失败 HTTP ${resp.status}`);
+            arrayBuf = await resp.arrayBuffer();
+        }
+
+        const fileObj = new File([arrayBuf], asset.name, { type: "application/octet-stream" });
+        handleAddFiles([fileObj]);
+
+        btn.textContent = "已载入 ✔";
+        appendLog(`🎉 固件 [${asset.name}] 载入成功，已填入刷机列表！`);
+
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 1500);
+    } catch (err) {
+        btn.textContent = "失败";
+        appendLog(`[GitHub] 固件下载失败: ${err.message}`);
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 2000);
+    }
 }
 
 // 连接与断开
@@ -343,6 +565,40 @@ function init() {
     btnConnect.addEventListener("click", toggleConnection);
     btnFlash.addEventListener("click", startFlash);
     btnErase.addEventListener("click", startErase);
+
+    // Tab 切换
+    tabLocal.addEventListener("click", () => {
+        tabLocal.classList.add("active");
+        tabGithub.classList.remove("active");
+        panelLocal.style.display = "block";
+        panelGithub.style.display = "none";
+    });
+
+    tabGithub.addEventListener("click", () => {
+        tabGithub.classList.add("active");
+        tabLocal.classList.remove("active");
+        panelGithub.style.display = "block";
+        panelLocal.style.display = "none";
+    });
+
+    // GitHub 控件
+    btnToggleToken.addEventListener("click", () => {
+        const isHidden = ghTokenInput.style.display === "none";
+        ghTokenInput.style.display = isHidden ? "block" : "none";
+        if (isHidden) ghTokenInput.focus();
+    });
+
+    btnGhFetch.addEventListener("click", fetchReleases);
+    ghRepoInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            fetchReleases();
+        }
+    });
+
+    ghReleaseSelect.addEventListener("change", (e) => {
+        renderGhAssets(parseInt(e.target.value, 10));
+    });
 
     filePicker.addEventListener("change", (e) => {
         if (e.target.files.length) {

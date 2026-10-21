@@ -97,6 +97,20 @@ folotoy-flasher ports
 folotoy-flasher plays
 ```
 
+#### 从 GitHub 仓库拉取固件：
+```bash
+# 交互式选择 Release 版本与固件并刷机
+folotoy-flasher github
+folotoy-flasher github wled/WLED
+folotoy-flasher github https://github.com/wled/WLED
+
+# 仅列出该仓库所有 Release 及包含的 .bin 固件：
+folotoy-flasher github wled/WLED -l
+
+# 指定端口、波特率并先擦除后刷入：
+folotoy-flasher github wled/WLED -p /dev/ttyACM0 -b 921600 -e
+```
+
 ---
 
 ## 📄 网页端逻辑与本工具映射表
