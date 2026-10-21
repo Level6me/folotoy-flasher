@@ -187,6 +187,15 @@ function handleAddFiles(fileListInput) {
     renderFiles();
 }
 
+function getApiUrl(apiPath) {
+    let base = window.location.pathname;
+    if (!base.endsWith('/')) {
+        base = base.substring(0, base.lastIndexOf('/') + 1);
+    }
+    if (!base.endsWith('/')) base += '/';
+    return base + apiPath.replace(/^\//, '');
+}
+
 function parseRepoInput(input) {
     let str = (input || "").trim().replace(/\.git\/?$/, "").replace(/\/+$/, "");
     const match = str.match(/(?:github\.com\/)?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
@@ -237,9 +246,10 @@ async function fetchReleases() {
         let releases = [];
         let usedProxy = false;
 
-        // 尝试通过本地 Python 接口获取
+        // 尝试通过本地/反向代理接口获取
         try {
-            const resp = await fetch(`/api/github/releases?repo=${encodeURIComponent(owner + '/' + repo)}&token=${encodeURIComponent(token)}`);
+            const proxyUrl = getApiUrl(`api/github/releases?repo=${encodeURIComponent(owner + '/' + repo)}&token=${encodeURIComponent(token)}`);
+            const resp = await fetch(proxyUrl);
             if (resp.ok) {
                 const data = await resp.json();
                 if (data.ok) {
@@ -356,19 +366,24 @@ async function loadAssetFirmware(asset, btn) {
         const token = getGhToken();
         let arrayBuf = null;
 
-        // 尝试通过本地后端下载
+        // 尝试通过本地/反向代理后端下载
         try {
-            const proxyUrl = `/api/github/download?url=${encodeURIComponent(asset.download_url)}&filename=${encodeURIComponent(asset.name)}&token=${encodeURIComponent(token)}`;
+            const proxyUrl = getApiUrl(`api/github/download?url=${encodeURIComponent(asset.download_url)}&filename=${encodeURIComponent(asset.name)}&token=${encodeURIComponent(token)}`);
             const resp = await fetch(proxyUrl);
             if (resp.ok) {
                 arrayBuf = await resp.arrayBuffer();
+            } else {
+                appendLog(`[GitHub] 代理接口返回状态码: ${resp.status}`);
             }
-        } catch (_) {}
+        } catch (e) {
+            appendLog(`[GitHub] 代理请求异常: ${e.message}`);
+        }
 
         // 回退直接下载
         if (!arrayBuf) {
+            appendLog(`[GitHub] 尝试直连下载...`);
             const resp = await fetch(asset.download_url);
-            if (!resp.ok) throw new Error(`下载失败 HTTP ${resp.status}`);
+            if (!resp.ok) throw new Error(`直连下载失败 HTTP ${resp.status}`);
             arrayBuf = await resp.arrayBuffer();
         }
 
@@ -384,11 +399,11 @@ async function loadAssetFirmware(asset, btn) {
         }, 1500);
     } catch (err) {
         btn.textContent = "失败";
-        appendLog(`[GitHub] 固件下载失败: ${err.message}`);
+        appendLog(`[GitHub] ❌ 固件下载失败: ${err.message}`);
         setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
-        }, 2000);
+        }, 2500);
     }
 }
 

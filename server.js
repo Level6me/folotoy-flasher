@@ -50,7 +50,13 @@ function fetchHttps(targetUrl, headers, maxRedirects = 5) {
         const client = parsed.protocol === 'http:' ? http : https;
         const req = client.request(reqOptions, (res) => {
             if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
-                return resolve(fetchHttps(res.headers.location, headers, maxRedirects - 1));
+                let nextHeaders = { ...headers };
+                const nextParsed = url.parse(res.headers.location);
+                if (nextParsed.hostname && !nextParsed.hostname.endsWith('github.com')) {
+                    delete nextHeaders['Authorization'];
+                    delete nextHeaders['authorization'];
+                }
+                return resolve(fetchHttps(res.headers.location, nextHeaders, maxRedirects - 1));
             }
             resolve(res);
         });
