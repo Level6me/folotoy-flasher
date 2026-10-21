@@ -467,6 +467,10 @@ button, a, input, select, label {
 
 .tab-btn {
     flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     padding: 7px 12px;
     border: none;
     border-radius: 7px;
@@ -476,6 +480,12 @@ button, a, input, select, label {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.gh-logo {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
 
 .tab-btn:hover {
