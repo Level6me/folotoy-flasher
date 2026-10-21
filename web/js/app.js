@@ -642,6 +642,29 @@ function init() {
 
     checkEnv();
     updateUI();
+    preventZoomGestures();
+}
+
+// 彻底禁止移动端（尤其是 iOS Safari）双指缩放和双击放大
+function preventZoomGestures() {
+    document.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gestureend', (e) => e.preventDefault(), { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches && e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    let lastTouchTime = 0;
+    document.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        if (now - lastTouchTime <= 300) {
+            e.preventDefault();
+        }
+        lastTouchTime = now;
+    }, { passive: false });
 }
 
 window.addEventListener("DOMContentLoaded", init);

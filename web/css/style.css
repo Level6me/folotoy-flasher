@@ -89,6 +89,11 @@
     padding: 0;
 }
 
+html {
+    touch-action: pan-x pan-y;
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     background: var(--bg);
     color: var(--text);
@@ -99,6 +104,11 @@ body {
     align-items: center;
     justify-content: center;
     padding: 16px;
+    touch-action: pan-x pan-y;
+}
+
+button, a, input, select, label {
+    touch-action: manipulation;
 }
 
 .mini-app {
@@ -573,30 +583,47 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .gh-release-header {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 600;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    width: 100%;
+    min-width: 0;
 }
 
 .gh-label {
     color: var(--text-sec);
-    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
 }
 
 .gh-select {
-    flex: 1;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
     background: var(--card-solid);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 5px 8px;
+    border-radius: 8px;
+    padding: 7px 28px 7px 10px;
     font-size: 12px;
     color: var(--text);
     outline: none;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 14px;
 }
 
 .gh-assets-list {
