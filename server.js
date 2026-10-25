@@ -63,7 +63,9 @@ function fetchHttps(targetUrl, headers, maxRedirects = 5) {
             if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
                 let nextHeaders = { ...headers };
                 const nextParsed = url.parse(res.headers.location);
-                if (nextParsed.hostname && !nextParsed.hostname.endsWith('github.com')) {
+                const nextHost = (nextParsed.hostname || '').toLowerCase();
+                // 精确匹配 github.com 及其子域；endsWith 裸串会放行 evilgithub.com 造成 Token 外泄
+                if (nextHost && nextHost !== 'github.com' && !nextHost.endsWith('.github.com')) {
                     delete nextHeaders['Authorization'];
                     delete nextHeaders['authorization'];
                 }

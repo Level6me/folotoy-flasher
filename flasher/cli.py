@@ -504,6 +504,8 @@ def start_web_server(port: int = 8080, open_browser: bool = True):
             if parsed_url.path == "/api/github/download":
                 download_url = query.get("url", [""])[0]
                 filename = query.get("filename", ["firmware.bin"])[0]
+                # 过滤 CR/LF 与引号，防止通过 filename 注入 HTTP 响应头
+                safe_filename = "".join(c for c in filename if c not in "\r\n\"\\") or "firmware.bin"
                 token = query.get("token", [None])[0]
                 try:
                     local_path = download_github_firmware(download_url, filename=filename, token=token)
@@ -511,7 +513,7 @@ def start_web_server(port: int = 8080, open_browser: bool = True):
                         data = f.read()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/octet-stream")
-                    self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+                    self.send_header("Content-Disposition", f'attachment; filename="{safe_filename}"')
                     self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
                     self.wfile.write(data)
