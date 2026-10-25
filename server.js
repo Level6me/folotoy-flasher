@@ -32,6 +32,17 @@ function parseRepo(repoInput) {
     return null;
 }
 
+// 仅允许从 github.com 及其子域下载，防止代理被滥用为任意 URL 抓取（SSRF）并携带 Token 外泄
+function isGithubDownloadUrl(u) {
+    try {
+        const parsed = url.parse(u);
+        const host = (parsed.hostname || '').toLowerCase();
+        return parsed.protocol === 'https:' && (host === 'github.com' || host.endsWith('.github.com'));
+    } catch (_) {
+        return false;
+    }
+}
+
 function fetchHttps(targetUrl, headers, maxRedirects = 5) {
     return new Promise((resolve, reject) => {
         if (maxRedirects < 0) {
@@ -109,6 +120,14 @@ const server = http.createServer(async (req, res) => {
 
         try {
             const apiRes = await fetchHttps(apiUrl, headers);
+            apiRes.on('error', () => {
+                if (!res.headersSent) {
+                    res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ ok: false, error: 'GitHub API 连接中断' }));
+                } else {
+                    res.destroy();
+                }
+            });
             let rawData = '';
             apiRes.on('data', chunk => { rawData += chunk; });
             apiRes.on('end', () => {
@@ -164,6 +183,11 @@ const server = http.createServer(async (req, res) => {
             res.end(JSON.stringify({ ok: false, error: '缺少固件下载地址' }));
             return;
         }
+        if (!isGithubDownloadUrl(downloadUrl)) {
+            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ ok: false, error: '仅支持从 github.com 下载固件' }));
+            return;
+        }
 
         const headers = { 'User-Agent': 'folotoy-flasher-web' };
         if (token) headers['Authorization'] = `token ${token}`;
@@ -176,14 +200,21 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
+            // 中途网络错误不能成为未捕获异常（否则整个进程退出）
+            dlRes.on('error', () => { res.destroy(); });
+            res.on('error', () => { dlRes.destroy(); });
             res.writeHead(200, {
                 'Content-Type': 'application/octet-stream',
                 'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`
             });
             dlRes.pipe(res);
         } catch (e) {
-            res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ ok: false, error: e.message }));
+            if (!res.headersSent) {
+                res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ ok: false, error: e.message }));
+            } else {
+                res.destroy();
+            }
         }
         return;
     }
@@ -195,7 +226,8 @@ const server = http.createServer(async (req, res) => {
 
     let filePath = path.join(WEB_DIR, reqPath);
 
-    if (!filePath.startsWith(WEB_DIR)) {
+    // 必须带路径分隔符做前缀比较，否则 "..%sibling" 这类同级目录（如 web2/）会绕过检查
+    if (filePath !== WEB_DIR && !filePath.startsWith(WEB_DIR + path.sep)) {
         res.writeHead(403);
         res.end('Forbidden');
         return;

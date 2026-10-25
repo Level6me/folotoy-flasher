@@ -108,6 +108,15 @@ def download_github_firmware(download_url: str, filename: Optional[str] = None, 
     """
     下载 GitHub Release 中的固件文件到本地缓存
     """
+    # 仅允许 github.com 及其子域，防止被当作任意 URL 抓取代理并携带 Token 外泄
+    from urllib.parse import urlparse
+    host = (urlparse(download_url).hostname or "").lower()
+    if host != "github.com" and not host.endswith(".github.com"):
+        raise ValueError(f"仅支持从 github.com 下载固件，拒绝地址: {download_url}")
+
+    if filename:
+        # 防止路径穿越（如 "../../.bashrc"）把固件写到缓存目录之外
+        filename = os.path.basename(filename.strip())
     if not filename:
         filename = download_url.split("/")[-1].split("?")[0]
         if not filename.endswith(".bin"):

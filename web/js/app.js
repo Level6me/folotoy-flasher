@@ -71,6 +71,16 @@ function formatKB(bytes) {
     return (bytes / 1024).toFixed(1) + " KB";
 }
 
+// HTML 转义：固件文件名来自本地文件或 GitHub Release 资产，均不可信
+function escapeHtml(str) {
+    return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function appendLog(line) {
     if (!line) return;
     const time = new Date().toLocaleTimeString();
@@ -147,8 +157,8 @@ function renderFiles() {
         const div = document.createElement("div");
         div.className = "file-item";
         div.innerHTML = `
-            <span class="file-name" title="${item.name}">${item.name} (${formatKB(item.size)})</span>
-            <input class="file-addr" type="text" value="${item.address}" title="写入地址">
+            <span class="file-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)} (${formatKB(item.size)})</span>
+            <input class="file-addr" type="text" value="${escapeHtml(item.address)}" title="写入地址">
             <button class="file-del" title="移除">✕</button>
         `;
 
@@ -344,7 +354,7 @@ function renderGhAssets(releaseIdx) {
         const item = document.createElement("div");
         item.className = "gh-asset-item";
         item.innerHTML = `
-            <span class="gh-asset-name" title="${a.name}">${a.is_bin ? "⚡ " : "📄 "}${a.name}</span>
+            <span class="gh-asset-name" title="${escapeHtml(a.name)}">${a.is_bin ? "⚡ " : "📄 "}${escapeHtml(a.name)}</span>
             <span class="gh-asset-meta">${formatKB(a.size)}</span>
             <button class="btn-gh-load" type="button">载入</button>
         `;

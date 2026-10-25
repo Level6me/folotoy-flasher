@@ -541,10 +541,10 @@ def start_web_server(port: int = 8080, open_browser: bool = True):
         except Exception:
             pass
 
-    # 允许端口复用
+    # 仅绑定本机回环地址：本地 Web Serial 工具不应向局域网暴露下载代理接口
     socketserver.TCPServer.allow_reuse_address = True
     try:
-        with socketserver.TCPServer(("", port), SilentHandler) as httpd:
+        with socketserver.TCPServer(("127.0.0.1", port), SilentHandler) as httpd:
             httpd.serve_forever()
     except KeyboardInterrupt:
         console.print("\n[dim]Web 刷机服务已停止。[/dim]")
